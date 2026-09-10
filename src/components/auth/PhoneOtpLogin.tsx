@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ConfirmationResult,
+  FirebaseError,
   RecaptchaVerifier,
   signOut,
   signInWithPhoneNumber,
@@ -60,7 +61,12 @@ export function PhoneOtpLogin() {
       console.error(error);
       window.recaptchaVerifier?.clear();
       delete window.recaptchaVerifier;
-      setMessage("Could not send OTP. Check the number and Firebase Phone Authentication setup.");
+
+      if (error instanceof FirebaseError) {
+        setMessage(`Firebase error: ${error.code}. Check Authorized Domains and Phone Authentication.`);
+      } else {
+        setMessage("Could not send OTP. Check Firebase Phone Authentication setup.");
+      }
     } finally {
       setLoading(false);
     }
