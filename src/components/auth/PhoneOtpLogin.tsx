@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FirebaseError } from "firebase/app";
 import {
   ConfirmationResult,
-  FirebaseError,
   RecaptchaVerifier,
   signOut,
   signInWithPhoneNumber,
