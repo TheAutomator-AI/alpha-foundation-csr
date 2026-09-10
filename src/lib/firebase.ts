@@ -3,12 +3,12 @@ import { getAuth } from "firebase/auth";
 
 // Firebase Web configuration. These values are intended for client-side use.
 const firebaseConfig = {
-  apiKey: "AIzaSyC2IZju-RiUZxI9hpI7-lvVQGs_-trGrpO",
+  apiKey: "AIzaSyCI2zju-RiUZxI9hpI7-lvVOGs_-trGrpQ",
   authDomain: "alpha-foundation-3f847.firebaseapp.com",
   projectId: "alpha-foundation-3f847",
   storageBucket: "alpha-foundation-3f847.firebasestorage.app",
   messagingSenderId: "608257286890",
-  appId: "1:608257286890:web:ce7585a28f499c26a2d93",
+  appId: "1:608257286890:web:0ce7585a28f499c26a2d93",
   measurementId: "G-0B1WF6JKRW",
 };
 
