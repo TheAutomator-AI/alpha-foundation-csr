@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://alpha-foundation-otp-backend.vercel.app";
+// OTP APIs are hosted inside this same Next.js/Vercel application.
+const BACKEND_URL = "";
 
 export function PhoneOtpLogin() {
   const [phone, setPhone] = useState("+91");
@@ -30,12 +31,10 @@ export function PhoneOtpLogin() {
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Could not send OTP.");
-      }
+      if (!response.ok || !data.success) throw new Error(data.error || "Could not send OTP.");
 
       setStep("otp");
-      setMessage(data.development ? "Development OTP enabled. Use 123456." : "OTP sent. Check your phone.");
+      setMessage("OTP sent. Check your phone.");
     } catch (error) {
       console.error(error);
       setMessage(error instanceof Error ? error.message : "Could not send OTP. Please try again.");
@@ -62,9 +61,7 @@ export function PhoneOtpLogin() {
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Invalid or expired OTP.");
-      }
+      if (!response.ok || !data.success) throw new Error(data.error || "Invalid or expired OTP.");
 
       if (data.token) {
         localStorage.setItem("alpha_auth_token", data.token);
@@ -92,11 +89,7 @@ export function PhoneOtpLogin() {
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan-300">Alpha Access</p>
         <h2 className="mt-2 font-display text-2xl uppercase tracking-wide text-white">Login successful</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">Your mobile number has been verified.</p>
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-5 w-full border border-white/15 px-4 py-3 font-mono text-xs uppercase tracking-widest text-slate-300 transition hover:border-cyan-400 hover:text-white"
-        >
+        <button type="button" onClick={reset} className="mt-5 w-full border border-white/15 px-4 py-3 font-mono text-xs uppercase tracking-widest text-slate-300 transition hover:border-cyan-400 hover:text-white">
           Sign in with another number
         </button>
       </div>
@@ -115,21 +108,9 @@ export function PhoneOtpLogin() {
         <div className="space-y-4">
           <label className="block">
             <span className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-slate-500">Mobile number</span>
-            <input
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+919876543210"
-              className="w-full border border-white/15 bg-white/5 px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-cyan-400"
-            />
+            <input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="+919876543210" className="w-full border border-white/15 bg-white/5 px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-cyan-400" />
           </label>
-          <button
-            type="button"
-            onClick={sendOtp}
-            disabled={loading}
-            className="w-full border border-cyan-400/60 bg-cyan-400 px-4 py-3 font-mono text-xs font-bold uppercase tracking-widest text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <button type="button" onClick={sendOtp} disabled={loading} className="w-full border border-cyan-400/60 bg-cyan-400 px-4 py-3 font-mono text-xs font-bold uppercase tracking-widest text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? "Sending…" : "Send OTP"}
           </button>
         </div>
@@ -137,29 +118,12 @@ export function PhoneOtpLogin() {
         <div className="space-y-4">
           <label className="block">
             <span className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-slate-500">6-digit OTP</span>
-            <input
-              value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="000000"
-              className="w-full border border-white/15 bg-white/5 px-4 py-3 text-center font-mono text-lg tracking-[0.5em] text-white outline-none transition focus:border-cyan-400"
-            />
+            <input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" className="w-full border border-white/15 bg-white/5 px-4 py-3 text-center font-mono text-lg tracking-[0.5em] text-white outline-none transition focus:border-cyan-400" />
           </label>
-          <button
-            type="button"
-            onClick={verifyOtp}
-            disabled={loading}
-            className="w-full border border-cyan-400/60 bg-cyan-400 px-4 py-3 font-mono text-xs font-bold uppercase tracking-widest text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <button type="button" onClick={verifyOtp} disabled={loading} className="w-full border border-cyan-400/60 bg-cyan-400 px-4 py-3 font-mono text-xs font-bold uppercase tracking-widest text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? "Verifying…" : "Verify & Login"}
           </button>
-          <button
-            type="button"
-            onClick={reset}
-            className="w-full px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition hover:text-white"
-          >
+          <button type="button" onClick={reset} className="w-full px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition hover:text-white">
             Use a different number
           </button>
         </div>
