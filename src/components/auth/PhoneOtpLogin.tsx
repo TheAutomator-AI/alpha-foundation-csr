@@ -1,20 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { FirebaseError } from "firebase/app";
-import {
-  ConfirmationResult,
-  RecaptchaVerifier,
-  signOut,
-  signInWithPhoneNumber,
-} from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useState } from "react";
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-  }
-}
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://alpha-foundation-otp-backend.vercel.app";
 
 export function PhoneOtpLogin() {
   const [phone, setPhone] = useState("+91");
@@ -22,89 +10,98 @@ export function PhoneOtpLogin() {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const confirmationResultRef = useRef<ConfirmationResult | null>(null);
-
-  useEffect(() => {
-    return () => {
-      window.recaptchaVerifier?.clear();
-      delete window.recaptchaVerifier;
-    };
-  }, []);
-
-  const setupRecaptcha = () => {
-    if (window.recaptchaVerifier) return window.recaptchaVerifier;
-
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, "alpha-recaptcha", {
-      size: "invisible",
-      callback: () => undefined,
-    });
-
-    return window.recaptchaVerifier;
-  };
+  const [token, setToken] = useState<string | null>(null);
 
   const sendOtp = async () => {
     setMessage("");
     const normalized = phone.replace(/\s+/g, "");
 
-    if (!/^\+[1-9]\d{7,14}$/.test(normalized)) {
-      setMessage("Enter a valid mobile number with country code, e.g. +919876543210.");
+    if (!/^\+91\d{10}$/.test(normalized)) {
+      setMessage("Enter a valid Indian mobile number, e.g. +919876543210.");
       return;
     }
 
     setLoading(true);
     try {
-      const verifier = setupRecaptcha();
-      confirmationResultRef.current = await signInWithPhoneNumber(auth, normalized, verifier);
+      const response = await fetch(`${BACKEND_URL}/api/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalized }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not send OTP.");
+      }
+
       setStep("otp");
-      setMessage("OTP sent. Check your phone.");
+      setMessage(data.development ? "Development OTP enabled. Use 123456." : "OTP sent. Check your phone.");
     } catch (error) {
       console.error(error);
-      window.recaptchaVerifier?.clear();
-      delete window.recaptchaVerifier;
-
-      if (error instanceof FirebaseError) {
-        setMessage(`Firebase error: ${error.code}. Check Authorized Domains and Phone Authentication.`);
-      } else {
-        setMessage("Could not send OTP. Check Firebase Phone Authentication setup.");
-      }
+      setMessage(error instanceof Error ? error.message : "Could not send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const verifyOtp = async () => {
-    if (!confirmationResultRef.current) return;
     if (!/^\d{6}$/.test(otp)) {
       setMessage("Enter the 6-digit OTP.");
       return;
     }
 
+    const normalized = phone.replace(/\s+/g, "");
     setLoading(true);
     setMessage("");
+
     try {
-      await confirmationResultRef.current.confirm(otp);
+      const response = await fetch(`${BACKEND_URL}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalized, otp }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Invalid or expired OTP.");
+      }
+
+      if (data.token) {
+        localStorage.setItem("alpha_auth_token", data.token);
+        setToken(data.token);
+      }
       setMessage("Login successful.");
     } catch (error) {
       console.error(error);
-      setMessage("Invalid or expired OTP. Please try again.");
+      setMessage(error instanceof Error ? error.message : "Invalid or expired OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const reset = async () => {
-    try {
-      await signOut(auth);
-    } catch {
-      // No active Firebase session is okay during reset.
-    }
-    confirmationResultRef.current = null;
-    window.recaptchaVerifier?.clear();
-    delete window.recaptchaVerifier;
+  const reset = () => {
     setOtp("");
     setStep("phone");
     setMessage("");
+    setToken(null);
   };
+
+  if (token) {
+    return (
+      <div className="w-full max-w-md border border-white/10 bg-black/70 p-6 backdrop-blur-xl">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan-300">Alpha Access</p>
+        <h2 className="mt-2 font-display text-2xl uppercase tracking-wide text-white">Login successful</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-400">Your mobile number has been verified.</p>
+        <button
+          type="button"
+          onClick={reset}
+          className="mt-5 w-full border border-white/15 px-4 py-3 font-mono text-xs uppercase tracking-widest text-slate-300 transition hover:border-cyan-400 hover:text-white"
+        >
+          Sign in with another number
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md border border-white/10 bg-black/70 p-6 backdrop-blur-xl">
@@ -169,7 +166,6 @@ export function PhoneOtpLogin() {
       )}
 
       {message && <p className="mt-4 text-xs leading-5 text-slate-300">{message}</p>}
-      <div id="alpha-recaptcha" />
     </div>
   );
 }
